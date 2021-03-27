@@ -1,0 +1,39 @@
+{
+  "name": "asas",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "nuxt",
+    "build": "nuxt build",
+    "start": "nuxt start",
+    "generate": "nuxt generate"
+  },
+  "dependencies": {
+    "@nuxtjs/axios": "^5.13.1",
+    "@nuxtjs/dotenv": "^1.4.1",
+    "@nuxtjs/google-tag-manager": "^2.3.2",
+    "@nuxtjs/proxy": "^2.1.0",
+    "@nuxtjs/sitemap": "^2.4.0",
+    "core-js": "^3.9.1",
+    "firebase": "^8.3.1",
+    "nuxt": "^2.15.3",
+    "vee-validate": "^3.4.5",
+    "vue-burger-menu": "^2.0.5",
+    "vue-scrollto": "^2.20.0",
+    "vue-slider-component": "^3.2.11",
+    "vuex-persistedstate": "^4.0.0-beta.3",
+    "vuexfire": "^3.2.5"
+  },
+  "devDependencies": {
+    "@mdi/js": "^5.9.55",
+    "@nuxtjs/style-resources": "^1.0.0",
+    "@nuxtjs/tailwindcss": "^4.0.2",
+    "autoprefixer": "^9.8.6",
+    "node-sass": "^5.0.0",
+    "postcss": "^7.0.35",
+    "pug": "^3.0.2",
+    "pug-plain-loader": "^1.1.0",
+    "sass-loader": "^10.1.1",
+    "tailwindcss": "npm:@tailwindcss/postcss7-compat@^2.0.4"
+  }
+}

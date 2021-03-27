@@ -1,0 +1,23 @@
+// font-size
+@mixin font-size($size, $base: 16) {
+  font-size: $size + px;
+  font-size: ($size / $base) + rem;
+}
+
+// 以上
+@mixin largerThan($width) {
+  @media screen and (min-width: $width + 1 + px) {
+    @content;
+  }
+}
+
+// 未満
+@mixin lessThan($width) {
+  @media screen and (max-width: $width + px) {
+    @content;
+  }
+}
+
+@mixin letter-spacing($spacing-size) {
+  letter-spacing: ($spacing-size / 1000) + em;
+}
