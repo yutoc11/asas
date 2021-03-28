@@ -1,5 +1,6 @@
 export default {
   // Target: https://go.nuxtjs.dev/config-target
+  // ssr: false,
   target: 'static',
 
   // Global page headers: https://go.nuxtjs.dev/config-head
@@ -25,8 +26,9 @@ export default {
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
   plugins: [
     { src: '~/plugins/firebase' },
-    { src: "~plugins/persistedstate.js", ssr: false },
+    { src: "~plugins/persistedstate.js", mode: 'client' },
     { src: '~/plugins/sliderComponent.js', mode: 'client'},
+    { src: '~/plugins/audio-visual.js', mode: 'client'},
   ],
 
   // Auto import components: https://go.nuxtjs.dev/config-components
@@ -58,5 +60,6 @@ export default {
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
   build: {
+    transpile: ['vue-audio-visual'],
   }
 }
