@@ -41,12 +41,12 @@
         .cancel-button.tw-mx-auto.tw-flex.tw-justify-center(v-else)
             button.tw-bg-blue-500.tw-text-white.tw-px-4.tw-py-2.tw-my-2.tw-rounded-full.tw-select-none(
               class="hover:tw-opacity-75"
-              v-if="isSetFile" @click="cancelFile()"
+              v-if="isSetFile" @click="cancelFile"
               ) ファイルをリセット
       .change-button.tw-mx-auto.tw-flex.tw-justify-center
         button.tw-bg-blue-500.tw-text-white.tw-px-4.tw-py-2.tw-my-2.tw-rounded-full.tw-select-none(
           class="hover:tw-opacity-75"
-          v-if="isSetFile" @click="fileUpload()"
+          v-if="isSetFile" @click="fileUpload"
           ) Cloud Storageに保存、何分割？
     section.tw-mx-auto.tw-my-5
       .no-split-length(v-if="currentData.splitLength == 0") 分割してないよ！
@@ -55,7 +55,7 @@
         .split-sst-button.tw-mx-auto.tw-flex.tw-justify-center
           button.tw-bg-blue-500.tw-text-white.tw-px-4.tw-py-2.tw-my-2.tw-rounded-full.tw-select-none(
             class="hover:tw-opacity-75"
-            @click="splitStt()"
+            @click="splitStt"
             ) この分割数で文字起こしする
     section.tw-mx-auto.tw-my-5
       .tw-mx-auto(v-for="(item, index) in splitDataArray" :key="index")
@@ -66,31 +66,58 @@
         .test.tw-mb-2.tw-text-center {{ item.description }}
 
     .bar-wrapper
-      .moving-bar.tw-mx-auto.tw-py-20.tw-px-20
-        vue-slider(v-model="value" :min-range="0" :tooltip="'none'" )
-          template(v-slot:process="{ start, end, style, index }")
-            .vue-slider-process(:style="style")
-              .merge-tooltip.vue-slider-dot-tooltip-inner.vue-slider-dot-tooltip-inner-top(v-if="index==0") {{ value[index+1] }} - {{ value[index] }}
+      .moving-bar.tw-mx-auto.tw-pt-20.tw-px-20.tw-pb-4
+        .vue-slider-wrapper(ref="audioWaveSplit")
+          vue-slider(v-model="value" :min-range="0" :tooltip="'none'" )
+            template(v-slot:process="{ start, end, style, index }")
+              .vue-slider-process(:style="style")
+                .merge-tooltip.vue-slider-dot-tooltip-inner.vue-slider-dot-tooltip-inner-top(v-if="index==0") {{ value[index+1] }} - {{ value[index] }}
+          .av-waveform-wrapper(v-if="displayPlaytime")
+            av-waveform(
+              v-if="writeWave"
+              :audio-controls="false"
+              caps-color="#FFF"
+              canv-class="audio-canvas"
+              audio-class="audio-control"
+              :bar-color="['#f00', '#ff0', '#0f0']"
+              canv-fill-color="#000"
+              :caps-height="2"
+              :audio-src="waveAudio"
+              :playtime-with-ms="false"
+              :playtime="displayPlaytime"
+              :canv-width="waveformWidth"
+              :canv-height=50
+              )
+    .audio-control-wrapper.tw-flex.tw-justify-center
+      .audio-contol-icon-wrapper
+          .audio-contol-icon.tw-cursor-pointer(@click="resetAudioTime")
+            span
+              svg(viewBox="0 0 24 24")
+                path(:d="iconStepBackward")
+      .audio-contol-icon-wrapper
+        .audio-contol-icon.tw-cursor-pointer(@click="playAudio")
+          span
+            svg(viewBox="0 0 24 24")
+              path(:d="iconPlayCircle")
+      .audio-contol-icon-wrapper
+        .audio-contol-icon.tw-cursor-pointer(@click="stopAudio")
+          span
+            svg(viewBox="0 0 24 24")
+              path(:d="iconPauseCircle")
+    .audio-info.tw-mx-auto.tw-py-20.tw-px-20
+      p 音声ファイルの長さ（時間）：{{ inputAudioInfo.audioDuration }}
+      p 分割スタート時間（ms）：{{ splitStartTimems }}
+      p 分割エンド時間（ms）：{{ splitEndTimems }}
+      p 分割スタート時間（分秒）：{{ splitStartTimeString }}
+      p 分割エンド時間（分秒）：{{ splitEndTimeString }}
       //- .test-audio-source
         audio(controls autoplay type="audio/mpeg" src="https://firebasestorage.googleapis.com/v0/b/asas-50dbf.appspot.com/o/output4.mp3?alt=media")
-
-    av-waveform(
-      v-if="writeWave"
-      caps-color="#FFF"
-      canv-class="audio-canvas"
-      audio-class="audio-control"
-      :bar-color="['#f00', '#ff0', '#0f0']"
-      canv-fill-color="#000"
-      :caps-height="2"
-      :audio-src="waveAudio"
-      canv-width="600"
-      canv-height="50"
-      )
-    section
-      .test#audio-canvas うふふ
 </template>
 <script lang="js">
-import { mdiFileMusicOutline } from '@mdi/js';
+import { mdiFileMusicOutline } from '@mdi/js'
+import { mdiPlayCircleOutline } from '@mdi/js'
+import { mdiPauseCircleOutline } from '@mdi/js'
+import { mdiStepBackward } from '@mdi/js';
 import firebase from '~/plugins/firebase'
 // import store from '~/store/index.js'
 import { mapActions, mapState, mapGetters } from 'vuex'
@@ -100,10 +127,10 @@ export default {
   name: 'Index',
 
   props: {
-    mdiFileMusicOutline: {
-      type: String,
-      required:  false,
-    }
+    mdiFileMusicOutline,
+    mdiPlayCircleOutline,
+    mdiPauseCircleOutline,
+    mdiStepBackward,
   },
 
   components: {
@@ -114,6 +141,9 @@ export default {
         isOpenPage: true,
         isLoadingCover: true,
         iconFileMusic: mdiFileMusicOutline,
+        iconPlayCircle: mdiPlayCircleOutline,
+        iconPauseCircle: mdiPauseCircleOutline,
+        iconStepBackward: mdiStepBackward,
         isSetFile: false,
         inputFile: '',
         currentData: {
@@ -133,6 +163,12 @@ export default {
         // file: 'output9.mp3',
         waveAudio: null,
         writeWave: false,
+        waveformWidth: 0,
+        inputAudioInfo: {
+          audioDuration: 0
+        },
+        isAudioDuration: false,
+        displayPlaytime: true,
       }
   },
 
@@ -140,6 +176,63 @@ export default {
     ...mapState(['user']),
     ...mapGetters(['isAuthenticated']),
 
+    audioCurrentTime: function () {
+      console.log('audioCurrentTimeなう！')
+      let audioCurrentTime = 0
+      let audio = document.querySelector('.audio-control')
+      console.log(audio)
+      if(audio) {
+        let audioCurrentTime = audio.currentTime
+      }
+      return audioCurrentTime
+    },
+
+    splitStartTimems: function () {
+      let splitStartTime = this.value[0] ? this.inputAudioInfo.audioDuration * this.value[0] / 100.0 : 0 ;
+      return splitStartTime
+    },
+
+    splitEndTimems: function () {
+      let splitEndTime = this.value[1] ? this.inputAudioInfo.audioDuration * this.value[1] / 100.0 : 0 ;
+      return splitEndTime
+    },
+
+    splitStartTimeString: function () {
+      let time = this.inputAudioInfo.audioDuration * this.value[0] / 100.0
+      let min = 0
+      let sec = 0
+      min = Math.floor(time / 60)
+      sec = Math.floor(time % 60)
+      return `${min}分${sec}秒`
+    },
+
+    splitEndTimeString: function () {
+      let time = this.inputAudioInfo.audioDuration * this.value[1] / 100.0
+      let min = 0
+      let sec = 0
+      min = Math.floor(time / 60)
+      sec = Math.floor(time % 60)
+      return `${min}分${sec}秒`
+    }
+  },
+
+  watch: {
+    writeWave: function() {
+      console.log('writeWaveなう')
+      if(this.writeWave) {
+        let count = 0
+        const timeout = 1000
+        setTimeout(() => {
+          const intervalId = setInterval(() =>{
+          this.setAudioInfo()
+          count++
+          // 10回繰り返すか、isAudioDurationが見つかって時間が読み取れたら繰り返しやめる
+          if(this.isAudioDuration || count > 10 ){　
+            clearInterval(intervalId)
+          }}, 500)
+        }, timeout)
+      }
+    }
   },
 
   created: function() {
@@ -166,8 +259,15 @@ export default {
 
   mounted(){
 
-    const storage = firebase.storage()
-    const storageRef = storage.ref()
+    // つまみふたつのスライダーと、waveformの位置を合わせる
+    const dom = this.$refs.audioWaveSplit; /* <h1 ref="title">Hello World</h1> */
+    const rect = dom.getBoundingClientRect(); // 要素の座標と幅と高さを取得
+    this.waveformWidth = rect.width
+    console.log(this.value[0])
+    console.log(this.value[1])
+
+    // const storage = firebase.storage()
+    // const storageRef = storage.ref()
 
     // storageRef.child('output4.mp3').getDownloadURL().then((url) => {
     //   console.log("中はいった！")
@@ -201,6 +301,7 @@ export default {
       this.waveAudio = null
       this.isSetFile = false
       this.writeWave = false
+      this.inputAudioInfo = {}
     },
 
     fileInput(e){
@@ -244,6 +345,40 @@ export default {
             userId: 'test'
         }
       })
+    },
+
+    setAudioInfo() {
+      this.$nextTick(function() {
+        let audio = document.querySelector('.audio-control')
+        console.log(audio)
+        if(audio) {
+          this.inputAudioInfo = {
+            audioDuration: audio.duration
+          }
+          this.isAudioDuration = true
+        }
+      })
+    },
+
+    playAudio() {
+      this.displayPlaytime = true
+      let audio = document.querySelector('.audio-control')
+      audio.play()
+    },
+
+    stopAudio() {
+      let audio = document.querySelector('.audio-control')
+      audio.pause()
+    },
+
+    resetAudioTime() {
+      this.displayPlaytime = false
+      this.$nextTick(function() {
+        this.displayPlaytime = true
+      })
+      let audio = document.querySelector('.audio-control')
+      audio.pause()
+      audio.currentTime = 0
     },
 
     ...mapActions(['setUser']),
@@ -306,9 +441,23 @@ export default {
 }
 
 .audio-control {
-  display: none;
+  // display: none;
 }
 
+.vue-slider-wrapper {
+  position: relative;
+  .av-waveform-wrapper {
+    position: absolute;
+    bottom:10px;
+    left:0;
+  }
+}
+
+.audio-contol-icon-wrapper {
+  height: 24px;
+  width: 24px;
+  margin: 0 auto;
+}
 
 
 
