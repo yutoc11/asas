@@ -65,14 +65,14 @@
       .tw-mx-auto(v-for="(item, index) in splitDataArray" :key="index")
         .test.tw-mb-2.tw-text-center {{ item.description }}
 
-    .bar-wrapper
+    .bar-bar-wrapper
       .moving-bar.tw-mx-auto.tw-pt-20.tw-px-20.tw-pb-4
-        .vue-slider-wrapper(ref="audioWaveSplit")
-          vue-slider(v-model="value" :min-range="0" :tooltip="'none'" )
+        .vue-slider-wrapper
+          vue-slider(v-model="value" :min-range="0" :width="sliderWidth" :tooltip="'none'")
             template(v-slot:process="{ start, end, style, index }")
               .vue-slider-process(:style="style")
-                .merge-tooltip.vue-slider-dot-tooltip-inner.vue-slider-dot-tooltip-inner-top(v-if="index==0") {{ value[index+1] }} - {{ value[index] }}
-          .av-waveform-wrapper(v-if="displayPlaytime")
+                .merge-tooltip.vue-slider-dot-tooltip-inner.vue-slider-dot-tooltip-inner-top(v-if="index==0") {{ splitAudioDuration }}
+          .av-waveform-wrapper(v-if="displayWaveform")
             av-waveform(
               v-if="writeWave"
               :audio-controls="false"
@@ -84,7 +84,7 @@
               :caps-height="2"
               :audio-src="waveAudio"
               :playtime-with-ms="false"
-              :playtime="displayPlaytime"
+              :playtime="displayWaveform"
               :canv-width="waveformWidth"
               :canv-height=50
               )
@@ -168,7 +168,8 @@ export default {
           audioDuration: 0
         },
         isAudioDuration: false,
-        displayPlaytime: true,
+        displayWaveform: true,
+        sliderWidth: 1000
       }
   },
 
@@ -208,6 +209,15 @@ export default {
 
     splitEndTimeString: function () {
       let time = this.inputAudioInfo.audioDuration * this.value[1] / 100.0
+      let min = 0
+      let sec = 0
+      min = Math.floor(time / 60)
+      sec = Math.floor(time % 60)
+      return `${min}分${sec}秒`
+    },
+
+    splitAudioDuration: function () {
+      let time = this.splitEndTimems -this.splitStartTimems
       let min = 0
       let sec = 0
       min = Math.floor(time / 60)
@@ -259,12 +269,13 @@ export default {
 
   mounted(){
 
+    this.sliderWidth = process.client && this.writeWave ? 1000 : window.innerWidth - 160;
     // つまみふたつのスライダーと、waveformの位置を合わせる
-    const dom = this.$refs.audioWaveSplit; /* <h1 ref="title">Hello World</h1> */
-    const rect = dom.getBoundingClientRect(); // 要素の座標と幅と高さを取得
-    this.waveformWidth = rect.width
-    console.log(this.value[0])
-    console.log(this.value[1])
+    // const dom = this.$refs.audioWaveSplit; /* <h1 ref="title">Hello World</h1> */
+    // const rect = dom.getBoundingClientRect(); // 要素の座標と幅と高さを取得
+    // this.waveformWidth = rect.width
+    // console.log(this.value[0])
+    // console.log(this.value[1])
 
     // const storage = firebase.storage()
     // const storageRef = storage.ref()
@@ -356,12 +367,17 @@ export default {
             audioDuration: audio.duration
           }
           this.isAudioDuration = true
+
+          if( audio.duration > 600 ) {
+              this.sliderWidth = audio.duration * 2.0
+            }
         }
       })
+      setTimeout(this.setWaveformWidth(),1000)
     },
 
     playAudio() {
-      this.displayPlaytime = true
+      this.displayWaveform = true
       let audio = document.querySelector('.audio-control')
       audio.play()
     },
@@ -372,13 +388,24 @@ export default {
     },
 
     resetAudioTime() {
-      this.displayPlaytime = false
+      this.displayWaveform = false
       this.$nextTick(function() {
-        this.displayPlaytime = true
+        this.displayWaveform = true
       })
       let audio = document.querySelector('.audio-control')
       audio.pause()
       audio.currentTime = 0
+    },
+
+    setWaveformWidth() {
+      this.displayWaveform = false
+      this.$nextTick(function() {
+        // つまみふたつのスライダーと、waveformの位置を合わせる
+        this.waveformWidth = this.sliderWidth
+        console.log('wavefomのwidthは？')
+        console.log(this.waveformWidth)
+        this.displayWaveform = true
+      })
     },
 
     ...mapActions(['setUser']),
@@ -442,6 +469,10 @@ export default {
 
 .audio-control {
   // display: none;
+}
+
+.moving-bar {
+  overflow-x: scroll;
 }
 
 .vue-slider-wrapper {
