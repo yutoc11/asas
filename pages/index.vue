@@ -68,7 +68,12 @@
     .bar-bar-wrapper
       .moving-bar.tw-mx-auto.tw-pt-20.tw-px-20.tw-pb-4
         .vue-slider-wrapper
-          vue-slider(v-model="value" :min-range="0" :width="sliderWidth" :tooltip="'none'")
+          vue-slider(
+            v-model="value"
+            :min-range="0"
+            :width="sliderWidth"
+            :tooltip="'none'"
+            )
             template(v-slot:process="{ start, end, style, index }")
               .vue-slider-process(:style="style")
                 .merge-tooltip.vue-slider-dot-tooltip-inner.vue-slider-dot-tooltip-inner-top(v-if="index==0") {{ splitAudioDuration }}
@@ -85,8 +90,8 @@
               :audio-src="waveAudio"
               :playtime-with-ms="false"
               :playtime="displayWaveform"
-              :canv-width="waveformWidth"
-              :canv-height=50
+              :canv-width="sliderWidth"
+              :canv-height=89
               )
     .audio-control-wrapper.tw-flex.tw-justify-center
       .audio-contol-icon-wrapper
@@ -163,7 +168,6 @@ export default {
         // file: 'output9.mp3',
         waveAudio: null,
         writeWave: false,
-        waveformWidth: 0,
         inputAudioInfo: {
           audioDuration: 0
         },
@@ -273,7 +277,7 @@ export default {
     // つまみふたつのスライダーと、waveformの位置を合わせる
     // const dom = this.$refs.audioWaveSplit; /* <h1 ref="title">Hello World</h1> */
     // const rect = dom.getBoundingClientRect(); // 要素の座標と幅と高さを取得
-    // this.waveformWidth = rect.width
+    // this.sliderWidth = rect.width
     // console.log(this.value[0])
     // console.log(this.value[1])
 
@@ -312,7 +316,10 @@ export default {
       this.waveAudio = null
       this.isSetFile = false
       this.writeWave = false
-      this.inputAudioInfo = {}
+      this.inputAudioInfo.audioDuration = 0
+      this.sliderWidth = window.innerWidth - 160;
+      setTimeout(this.reDraw(),1000)
+      console.log('キャンセルなう')
     },
 
     fileInput(e){
@@ -373,7 +380,7 @@ export default {
             }
         }
       })
-      setTimeout(this.setWaveformWidth(),1000)
+      setTimeout(this.reDraw(),1000)
     },
 
     playAudio() {
@@ -397,13 +404,10 @@ export default {
       audio.currentTime = 0
     },
 
-    setWaveformWidth() {
+    reDraw() {
       this.displayWaveform = false
       this.$nextTick(function() {
         // つまみふたつのスライダーと、waveformの位置を合わせる
-        this.waveformWidth = this.sliderWidth
-        console.log('wavefomのwidthは？')
-        console.log(this.waveformWidth)
         this.displayWaveform = true
       })
     },
@@ -445,14 +449,14 @@ export default {
 .merge-tooltip {
   position: absolute;
   left: 50%;
-  bottom: 45px;
+  bottom: 5px;
   transform: translate(-50%, -15px);
 }
 
 .vue-slider-dot-handle::after {
   content:"";
   width: 2px;
-  height: 45px;
+  height: 82px;
   position: absolute;
   background: rgba(14, 165, 233, 0.5);
   bottom: 14px;
@@ -461,14 +465,14 @@ export default {
 .vue-slider::after {
   content:"";
   width: 100%;
-  height: 50px;
+  height: 100px;
   position: absolute;
   bottom: 11px;
   background: rgba(14, 165, 233, 0.1);
 }
 
-.audio-control {
-  // display: none;
+.audio-canvas {
+  padding-right: 80px;
 }
 
 .moving-bar {
